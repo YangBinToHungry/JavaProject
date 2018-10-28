@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+             xmlns:beans="http://www.springframework.org/schema/beans"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+             xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd">
+
+    <dubbo:application name="pinyouogu-shop-web"></dubbo:application>
+    <dubbo:registry address="zookeeper://192.168.25.128:2181"></dubbo:registry>
+    <dubbo:reference interface="com.pinyougou.sellergoods.service.SellerService" id="sellerService"></dubbo:reference>
+
+    <http pattern="/css/**" security="none"></http>
+    <http pattern="/img/**" security="none"></http>
+    <http pattern="/js/**" security="none"></http>
+    <http pattern="/plugins/**" security="none"></http>
+    <http pattern="/*.html" security="none"></http>
+    <http pattern="/seller/add.do" security="none"></http>
+
+    <http use-expressions="false">
+        <intercept-url pattern="/assets/img/favicon.ico" access="IS_AUTHENTICATED_ANONYMOUSLY"></intercept-url>
+        <intercept-url pattern="/**" access="ROLE_SELLER"></intercept-url>
+        <form-login
+         login-page="/shoplogin.html"
+         default-target-url="/admin/index.html"
+         authentication-failure-url="/shoplogin.html"
+         always-use-default-target="true"
+        ></form-login>
+        <csrf disabled="true"></csrf>
+
+        <logout logout-success-url="/shoplogin.html" logout-url="/mylogout"></logout>
+
+        <headers>
+            <!--设置策略为：同源框架可以共享安全策略-->
+            <frame-options policy="SAMEORIGIN"></frame-options>
+        </headers>
+    </http>
+
+    <beans:bean class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" id="passwordEncoder"></beans:bean>
+    <beans:bean class="com.pinyougou.shop.security.UserDetailsServiceImpl" id="userDetailsService">
+        <beans:property name="sellerService" ref="sellerService"></beans:property>
+    </beans:bean>
+    <authentication-manager>
+        <authentication-provider user-service-ref="userDetailsService">
+            <password-encoder ref="passwordEncoder"></password-encoder>
+        </authentication-provider>
+    </authentication-manager>
+</beans:beans>
